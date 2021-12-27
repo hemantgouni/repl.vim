@@ -68,7 +68,7 @@ endfunction
 function! s:Send_to_repl(repl, preprocessor, string)
 
     " Ensure the repl is displayed
-    call Repl_show(a:repl)
+    call s:Repl_show(a:repl)
 
     " We probably want to use a lambda here (instead of arguments to set
     " delimiters), because for other languages, inserting characters after lines
@@ -182,7 +182,7 @@ function! s:Repl_toggle(repl)
     " otherwise, make the terminal window
     else
 
-        call Make_repl_window(a:repl)
+        call s:Make_repl_window(a:repl)
 
         " enter insert mode
         startinsert!
@@ -211,7 +211,7 @@ function! s:Repl_show(repl)
     " identifiers
     if bufwinid(s:repl_buffer) == -1
 
-        call Make_repl_window(a:repl)
+        call s:Make_repl_window(a:repl)
 
     endif
 
