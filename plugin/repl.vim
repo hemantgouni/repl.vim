@@ -227,19 +227,23 @@ endfunction
 
 augroup Haskell_repl_config
     autocmd!
-    autocmd FileType haskell nnoremap <silent><M-t> :call Repl_toggle("ghci")<CR>
-    autocmd FileType haskell inoremap <silent><M-t> <ESC>:call Repl_toggle("ghci")<CR>
-    autocmd FileType haskell tnoremap <silent><M-t> <C-\><C-n>:call Repl_toggle("ghci")<CR>
+    " we use <SID> here so vim knows exactly which function to call when these
+    " mappings are invoked from outside the script
+    autocmd FileType haskell nnoremap <silent><localleader>r :call <SID>Repl_toggle("ghci")<CR>
+
+    autocmd FileType haskell inoremap <silent><localleader>r <ESC>:call <SID>Repl_toggle("ghci")<CR>
+
+    autocmd FileType haskell tnoremap <silent><localleader>r <C-\><C-n>:call <SID>Repl_toggle("ghci")<CR>
 
     " lambdas don't require a: in front of their argument variables within
     " their bodies
-    autocmd FileType haskell nnoremap <silent><localleader>e :call Send_to_repl("ghci",
+    autocmd FileType haskell nnoremap <silent><localleader>e :call <SID>Send_to_repl("ghci",
                 \ { string -> count(string, "\n") > 1 ? ":{\n" . string . ":}\n" : string },
-                \ Get_text_with("yip"))
+                \ <SID>Get_text_with("yip"))
                 \ <CR>
 
-    autocmd FileType haskell nnoremap <silent><localleader>t :call Send_to_repl("ghci",
+    autocmd FileType haskell nnoremap <silent><localleader>t :call <SID>Send_to_repl("ghci",
                 \ { string -> ":type " . string . "\n" },
-                \ Get_text_with("yiw"))
+                \ <SID>Get_text_with("yiw"))
                 \ <CR>
 augroup END
