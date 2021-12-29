@@ -14,6 +14,10 @@
 " You should have received a copy of the GNU Affero General Public License
 " along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+" TODO: Figure out multiplexing repls; we probably want to use a dictionary
+" where the keys are the repl and the values are dicts of the buffer, window,
+" and job_identifer. How does this currently work
+
 " the terminal buffer in which the repl is
 let s:repl_buffer = -1
 
