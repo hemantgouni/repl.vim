@@ -24,6 +24,8 @@ let s:repl_window = -1
 " the repl buffer
 let s:repl_job_identifier = -1
 
+let s:repl_language_mapping = { 'ghci': 'haskell', 'python -i': 'python' }
+
 " yank: String
 " @returns: String
 
@@ -40,7 +42,7 @@ function! s:Get_text_with(yank)
     let l:old_reg_type = getregtype()
 
     " run the yank command
-    execute "normal! " . a:yank
+    execute 'normal! ' . a:yank
 
     " get the result of the yank command
     let l:reg_value = getreg()
@@ -108,14 +110,14 @@ function! s:Make_repl_window(repl)
 
             " switch to the terminal buffer,
             " if there is one
-            execute "buffer " . s:repl_buffer
+            execute 'buffer ' . s:repl_buffer
 
             " remove the unneeded buffer here
             "
             " we don't write 'bd repl' here because we
             " want to avoid accidental variable capture (ie,
             " 'repl' could be a local variable)
-            execute "bd repl"
+            execute 'bd repl'
 
         " if it does not exist, make a new terminal buffer
         catch
@@ -129,7 +131,10 @@ function! s:Make_repl_window(repl)
             let s:repl_job_identifier = termopen(a:repl)
 
             " set local options for the buffer
-            setlocal nocursorline
+            " we set the filetype here to cause the toggle keybinds to be
+            " registered in the new buffer via their autocommands
+            setlocal nocursorline scrolloff=0
+            execute 'setlocal filetype=' . s:repl_language_mapping[a:repl]
 
         endtry
 
@@ -226,24 +231,43 @@ function! s:Repl_show(repl)
 endfunction
 
 augroup Haskell_repl_config
+
+    " clear existing autocommands? not sure
     autocmd!
+
     " we use <SID> here so vim knows exactly which function to call when these
     " mappings are invoked from outside the script
-    autocmd FileType haskell nnoremap <silent> <buffer> <LocalLeader>r :call <SID>Repl_toggle("ghci")<CR>
+    
+    autocmd FileType haskell nnoremap <silent> <buffer> <LocalLeader>r :call <SID>Repl_toggle('ghci')<CR>
 
-    autocmd FileType haskell inoremap <silent> <buffer> <LocalLeader>r <ESC>:call <SID>Repl_toggle("ghci")<CR>
+    autocmd FileType haskell inoremap <silent> <buffer> <LocalLeader>r <ESC>:call <SID>Repl_toggle('ghci')<CR>
 
-    autocmd FileType haskell tnoremap <silent> <buffer> <LocalLeader>r <C-\><C-n>:call <SID>Repl_toggle("ghci")<CR>
+    autocmd FileType haskell tnoremap <silent> <buffer> <LocalLeader>r <C-\><C-n>:call <SID>Repl_toggle('ghci')<CR>
 
     " lambdas don't require a: in front of their argument variables within
     " their bodies
-    autocmd FileType haskell nnoremap <silent> <buffer> <LocalLeader>e :call <SID>Send_to_repl("ghci",
+    autocmd FileType haskell nnoremap <silent> <buffer> <LocalLeader>e :call <SID>Send_to_repl('ghci',
                 \ { string -> count(string, "\n") > 1 ? ":{\n" . string . ":}\n" : string },
-                \ <SID>Get_text_with("yip"))
+                \ <SID>Get_text_with('yip'))
                 \ <CR>
 
-    autocmd FileType haskell nnoremap <silent> <buffer> <LocalLeader>t :call <SID>Send_to_repl("ghci",
-                \ { string -> ":type " . string . "\n" },
-                \ <SID>Get_text_with("yiw"))
+    autocmd FileType haskell nnoremap <silent> <buffer> <LocalLeader>t :call <SID>Send_to_repl('ghci',
+                \ { string -> ':type ' . string . "\n" },
+                \ <SID>Get_text_with('yiw'))
                 \ <CR>
+
+    " d for describe? documentation? not sure, but I like it more than 'i'
+    autocmd FileType haskell nnoremap <silent> <buffer> <LocalLeader>d :call <SID>Send_to_repl('ghci',
+                \ { string -> ':info ' . string . "\n" },
+                \ <SID>Get_text_with('yiw'))
+                \ <CR>
+
+    " this will not work on windows; have vim detect if we are on windows and
+    " change this accordingly? or will it, since nvim comes with libvterm?
+    " does nvim completely work on windows
+    autocmd FileType haskell nnoremap <silent> <buffer> <LocalLeader>c :call <SID>Send_to_repl('ghci',
+                \ { string -> string . "\n" },
+                \ ':! clear')
+                \ <CR>
+
 augroup END
