@@ -28,7 +28,7 @@ let s:repl_window = -1
 " the repl buffer
 let s:repl_job_identifier = -1
 
-let s:repl_language_mapping = { 'ghci': 'haskell', 'python -i': 'python', 'racket': 'racket' }
+let s:repl_language_mapping = { 'ghci': 'haskell', 'python -i': 'python', 'racket': 'scheme' }
 
 " yank: String
 " @returns: String
@@ -279,11 +279,11 @@ augroup Racket_repl_config
 
     autocmd!
 
-    autocmd FileType racket nnoremap <silent> <buffer> <LocalLeader>r :call <SID>Repl_toggle('racket')<CR>
+    autocmd FileType scheme nnoremap <silent> <buffer> <LocalLeader>r :call <SID>Repl_toggle('racket')<CR>
 
-    autocmd FileType racket tnoremap <silent> <buffer> <LocalLeader>r <C-\><C-n>:call <SID>Repl_toggle('racket')<CR>
+    autocmd FileType scheme tnoremap <silent> <buffer> <LocalLeader>r <C-\><C-n>:call <SID>Repl_toggle('racket')<CR>
 
-    autocmd FileType racket nnoremap <silent> <buffer> <LocalLeader>e :call <SID>Send_to_repl('racket',
+    autocmd FileType scheme nnoremap <silent> <buffer> <LocalLeader>e :call <SID>Send_to_repl('racket',
                 \ { string -> "(" . string . ")\n" },
                 \ <SID>Get_text_with('yi('))
                 \ <CR>
