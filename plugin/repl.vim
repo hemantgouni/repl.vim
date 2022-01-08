@@ -28,7 +28,7 @@ let s:repl_window = -1
 " the repl buffer
 let s:repl_job_identifier = -1
 
-let s:repl_language_mapping = { 'ghci': 'haskell', 'python -i': 'python' }
+let s:repl_language_mapping = { 'ghci': 'haskell', 'python -i': 'python', 'racket': 'racket' }
 
 " yank: String
 " @returns: String
@@ -69,6 +69,7 @@ endfunction
 " preprocessor: String -> String
 " string: String
 " @gets: s:repl_job_identifier
+" @gets: s:repl_window
 " @returns: Unit
 
 function! s:Send_to_repl(repl, preprocessor, string)
@@ -244,8 +245,6 @@ augroup Haskell_repl_config
     
     autocmd FileType haskell nnoremap <silent> <buffer> <LocalLeader>r :call <SID>Repl_toggle('ghci')<CR>
 
-    autocmd FileType haskell inoremap <silent> <buffer> <LocalLeader>r <ESC>:call <SID>Repl_toggle('ghci')<CR>
-
     autocmd FileType haskell tnoremap <silent> <buffer> <LocalLeader>r <C-\><C-n>:call <SID>Repl_toggle('ghci')<CR>
 
     " lambdas don't require a: in front of their argument variables within
@@ -272,6 +271,21 @@ augroup Haskell_repl_config
     autocmd FileType haskell nnoremap <silent> <buffer> <LocalLeader>c :call <SID>Send_to_repl('ghci',
                 \ { string -> string . "\n" },
                 \ ':! clear')
+                \ <CR>
+
+augroup END
+
+augroup Racket_repl_config
+
+    autocmd!
+
+    autocmd FileType racket nnoremap <silent> <buffer> <LocalLeader>r :call <SID>Repl_toggle('racket')<CR>
+
+    autocmd FileType racket tnoremap <silent> <buffer> <LocalLeader>r <C-\><C-n>:call <SID>Repl_toggle('racket')<CR>
+
+    autocmd FileType racket nnoremap <silent> <buffer> <LocalLeader>e :call <SID>Send_to_repl('racket',
+                \ { string -> "(" . string . ")\n" },
+                \ <SID>Get_text_with('yi('))
                 \ <CR>
 
 augroup END
