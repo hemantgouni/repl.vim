@@ -235,6 +235,34 @@ function! s:Repl_show(repl)
 
 endfunction
 
+" Remove the repl buffer (usually for restarting it)
+"
+" TODO: This takes a repl argument for when we support multiplexing repls, so
+" it knows which one to remove
+"
+" repl: String
+" @gets: s:repl_buffer
+" @returns: Unit
+function! s:Repl_remove(repl)
+
+    if bufexists(s:repl_buffer)
+        execute "bwipeout! " . s:repl_buffer
+    endif
+
+endfunction
+
+" Convenience function for keybindings to restart the repl
+"
+" repl: String
+" @returns: Unit
+function! s:Repl_restart(repl)
+
+    call s:Repl_remove(a:repl)
+
+    call s:Repl_show(a:repl)
+
+endfunction
+
 augroup Haskell_repl_config
 
     " clear existing autocommands? not sure
@@ -275,7 +303,7 @@ augroup Haskell_repl_config
 
 augroup END
 
-augroup Scheme_repl_config 
+augroup Racket_repl_config
 
     autocmd!
 
@@ -288,9 +316,21 @@ augroup Scheme_repl_config
                 \ <SID>Get_text_with('yi('))
                 \ <CR>
 
-    autocmd FileType racket nnoremap <silent> <buffer> <LocalLeader>l :call <SID>Send_to_repl('racket',
+    autocmd FileType racket nnoremap <silent> <buffer> <LocalLeader>n :call <SID>Send_to_repl('racket',
+                \ { string -> ",en " . string . "\n"},
+                \ expand('%:p'))
+                \ <CR>
+
+    autocmd FileType racket nnoremap <silent> <buffer> <LocalLeader>b :call <SID>Send_to_repl('racket',
                 \ { string -> string . "\n"},
-                \ ",rr " . expand('%:p'))
+                \ ",toplevel")
+                \ <CR>
+
+    autocmd FileType racket nnoremap <silent> <buffer> <LocalLeader>c :call <SID>Repl_restart('racket')<CR>
+
+    autocmd FileType racket nnoremap <silent> <buffer> <LocalLeader>1 :call <SID>Send_to_repl('racket',
+                \ { string -> "(expand-once (" . string . "))\n"},
+                \ <SID>Get_text_with('yi('))
                 \ <CR>
 
 augroup END
