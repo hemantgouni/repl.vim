@@ -46,7 +46,7 @@ function! s:Get_text_with(yank)
     let l:old_reg_type = getregtype()
 
     " run the yank command
-    execute 'normal! ' . a:yank
+    execute 'silent normal! ' . a:yank
 
     " get the result of the yank command
     let l:reg_value = getreg()
@@ -89,7 +89,7 @@ function! s:Send_to_repl(repl, preprocessor, string)
     " this ensures that the buffer will autoscroll
     "
     " think of a cleaner way to do this?
-    call win_execute(s:repl_window, 'normal! G')
+    call win_execute(s:repl_window, 'silent normal! G')
 
 endfunction
 
@@ -122,7 +122,11 @@ function! s:Make_repl_window(repl)
             " we don't write 'bd repl' here because we
             " want to avoid accidental variable capture (ie,
             " 'repl' could be a local variable)
-            execute 'bd repl'
+            "
+            " TODO: wrapping this to avoid variable capture may be unnecessary
+            "
+            " no ! here, after bdelete, it's not necessary? i think
+            execute 'bdelete repl'
 
         " if it does not exist, make a new terminal buffer
         catch
@@ -135,14 +139,17 @@ function! s:Make_repl_window(repl)
             " identifier so we can send text to it
             let s:repl_job_identifier = termopen(a:repl)
 
-            " set local options for the buffer
-            " we set the filetype here to cause the toggle keybinds to be
-            " registered in the new buffer via their autocommands
-            setlocal nocursorline scrolloff=0
-            execute 'setlocal filetype=' . s:repl_language_mapping[a:repl]
+            " set local options for the buffer here
+            " none yet!
 
         endtry
 
+        " set window local options
+        " we set the filetype here to cause the toggle keybinds to be
+        " registered in the new window via their autocommands
+        setlocal nocursorline scrolloff=0
+        execute 'setlocal filetype=' . s:repl_language_mapping[a:repl]
+            
         " record the new window identifier
         let s:repl_window = win_getid()
 
@@ -157,6 +164,9 @@ endfunction
 " @returns: Unit
 
 function! s:Repl_toggle(repl)
+
+    " save our original window, so we can return to it later
+    let l:original_window = win_getid()
 
     " test if the window containing the repl buffer
     " is the last one open
@@ -175,7 +185,17 @@ function! s:Repl_toggle(repl)
     " the specified buffer
     if winnr('$') == 1 && bufwinnr(s:repl_buffer) != -1
 
-        new
+        " we won't attempt to bdelete repl_scratch here, because
+        " we're about to recreate it, anyway
+        "
+        " there's no good way to garbage collect this buffer, so
+        " it will stick around-- but there will only be one
+
+        new repldotvim_says_open_another_file
+
+        " this is buffer-local, so we don't technically need to set it
+        " again here, if we're not creating the buffer for the first time
+        setlocal nomodifiable
 
         call win_gotoid(s:repl_window)
 
@@ -194,8 +214,9 @@ function! s:Repl_toggle(repl)
 
         call s:Make_repl_window(a:repl)
 
-        " enter insert mode
-        startinsert!
+        " return to the window we were originally inside
+        " we don't want to switch focus to the repl window
+        call win_gotoid(l:original_window)
 
     endif
 
@@ -246,7 +267,7 @@ endfunction
 function! s:Repl_remove(repl)
 
     if bufexists(s:repl_buffer)
-        execute "bwipeout! " . s:repl_buffer
+        execute "bdelete! " . s:repl_buffer
     endif
 
 endfunction
@@ -301,6 +322,8 @@ augroup Haskell_repl_config
                 \ ':! clear')
                 \ <CR>
 
+    autocmd FileType haskell nnoremap <silent> <buffer> <LocalLeader>d :call <SID>Repl_restart('ghci')<CR>
+
 augroup END
 
 augroup Racket_repl_config
@@ -326,11 +349,16 @@ augroup Racket_repl_config
                 \ ",toplevel")
                 \ <CR>
 
-    autocmd FileType racket nnoremap <silent> <buffer> <LocalLeader>c :call <SID>Repl_restart('racket')<CR>
+    autocmd FileType racket nnoremap <silent> <buffer> <LocalLeader>c :call <SID>Send_to_repl('racket',
+                \ { string -> ",shell " . string . "\n"},
+                \ "clear")
+                \ <CR>
 
     autocmd FileType racket nnoremap <silent> <buffer> <LocalLeader>1 :call <SID>Send_to_repl('racket',
                 \ { string -> "(expand-once (" . string . "))\n"},
                 \ <SID>Get_text_with('yi('))
                 \ <CR>
+
+    autocmd FileType racket nnoremap <silent> <buffer> <LocalLeader>d :call <SID>Repl_restart('racket')<CR>
 
 augroup END
